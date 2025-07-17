@@ -1,5 +1,5 @@
 import express from "express";
-import { getUserProfile,updateProfile,syncUser } from "../controllers/user.controller.js";
+import { getUserProfile,updateProfile,syncUser,getCurrentUser,followUser } from "../controllers/user.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
 
