@@ -88,5 +88,4 @@ export default function Index() {
 }
 
 
-
 //TODO research button and touchable opacity
