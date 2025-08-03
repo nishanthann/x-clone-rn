@@ -14,6 +14,8 @@ export const createApiClient = (
 
   api.interceptors.request.use(async (config) => {
     const token = await getToken();
+    console.log("🛡️ Token in interceptor:", token);
+    console.log("🌍 Calling:", config.baseURL + config.url);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
