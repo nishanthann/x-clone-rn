@@ -21,31 +21,48 @@ export const updateProfile = asyncHandler(async (req, res) => {
 });
 
 export const syncUser = asyncHandler(async (req, res) => {
-  const { userId } = getAuth(req);
-  console.log("✅ Clerk Authenticated userId:", userId);
-  const existingUser = await User.findOne({ clerkId: userId });
-  if (existingUser) {
-    return res
-      .status(200)
-      .json({ user: existingUser, message: "User already exists" });
+  try {
+    const { userId } = getAuth(req);
+
+    if (!userId) {
+      console.warn("❌ No userId from Clerk Auth.");
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: No userId found." });
+    }
+
+    console.log("✅ Clerk Authenticated userId:", userId);
+
+    const existingUser = await User.findOne({ clerkId: userId });
+    if (existingUser) {
+      return res.status(200).json({
+        user: existingUser,
+        message: "User already exists",
+      });
+    }
+
+    // Fetch full user info from Clerk
+    const clerkUser = await clerkClient.users.getUser(userId);
+
+    const userData = {
+      clerkId: userId,
+      email: clerkUser.emailAddresses[0]?.emailAddress || "",
+      firstName: clerkUser.firstName || "",
+      lastName: clerkUser.lastName || "",
+      username: clerkUser.emailAddresses[0]?.emailAddress.split("@")[0] || "",
+      profilePicture: clerkUser.imageUrl || "",
+    };
+
+    const newUser = await User.create(userData);
+
+    return res.status(201).json({
+      user: newUser,
+      message: "User created successfully",
+    });
+  } catch (error) {
+    console.error("🔥 Error in syncUser:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
-
-  // ✅ Fetch full user info from Clerk
-
-  const clerkUser = await clerkClient.users.getUser(userId);
-
-  const userData = {
-    clerkId: userId,
-    email: clerkUser.emailAddresses[0].emailAddress,
-    firstName: clerkUser.firstName || "",
-    lastName: clerkUser.lastName || "",
-    username: clerkUser.emailAddresses[0].emailAddress.split("@")[0],
-    profilePicture: clerkUser.imageUrl || "",
-  };
-  const user = await User.create(userData);
-  console.log("✅ Clerk Authenticated userId:", userId);
-
-  res.status(201).json({ user, message: "User created successfully" });
 });
 
 export const getCurrentUser = asyncHandler(async (req, res) => {
